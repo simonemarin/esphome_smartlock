@@ -1,0 +1,241 @@
+esphome:
+  name: home_door
+  platform: ESP8266
+  board: nodemcuv2
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_pswd
+
+  ap:
+    ssid: "Home Door Fallback Hotspot"
+    password: !secret wifi_pswd
+
+captive_portal:
+
+web_server:
+  port: 80
+
+# Enable logging
+logger:
+  level: INFO
+
+ota:
+
+globals:
+  - id: steps_full
+    type: int
+    initial_value: '3200'
+  - id: steps_open_latch
+    type: int
+    initial_value: '-1288'
+  - id: steps_offset_latch
+    type: int
+    initial_value: '-200'
+  - id: beeps
+    type: int
+
+uart:
+  rx_pin: D5
+  tx_pin: D6
+  baud_rate: 57600
+
+fingerprint_grow:
+  sensing_pin: D7
+  on_finger_scan_matched:
+    - homeassistant.event:
+        event: esphome.test_fingerprint_grow_finger_scan_matched
+        data:
+          finger_id: !lambda 'return finger_id;'
+          confidence: !lambda 'return confidence;'
+    - fingerprint_grow.aura_led_control:
+        state: BREATHING
+        speed: 200
+        color: BLUE
+        count: 1
+    - switch.turn_on: open_home_door
+  on_finger_scan_unmatched:
+    - homeassistant.event:
+        event: esphome.test_fingerprint_grow_finger_scan_unmatched
+    - fingerprint_grow.aura_led_control:
+        state: FLASHING
+        speed: 25
+        color: RED
+        count: 2
+  on_enrollment_scan:
+    - homeassistant.event:
+        event: esphome.test_fingerprint_grow_enrollment_scan
+        data:
+          finger_id: !lambda 'return finger_id;'
+          scan_num: !lambda 'return scan_num;'
+    - fingerprint_grow.aura_led_control:
+        state: FLASHING
+        speed: 25
+        color: BLUE
+        count: 2
+  on_enrollment_done:
+    - homeassistant.event:
+        event: esphome.test_fingerprint_grow_node_enrollment_done
+        data:
+          finger_id: !lambda 'return finger_id;'
+    - fingerprint_grow.aura_led_control:
+        state: BREATHING
+        speed: 100
+        color: BLUE
+        count: 2
+  on_enrollment_failed:
+    - homeassistant.event:
+        event: esphome.test_fingerprint_grow_enrollment_failed
+        data:
+          finger_id: !lambda 'return finger_id;'
+    - fingerprint_grow.aura_led_control:
+        state: FLASHING
+        speed: 25
+        color: RED
+        count: 4
+
+switch:
+  - platform: template
+    name: "Open home door"
+    id: open_home_door
+    turn_on_action:
+      - stepper.report_position:
+          id: nema
+          position: 0
+      - output.turn_on: stepper_en
+      - if:
+          condition:
+            binary_sensor.is_on: door_state
+          then:
+            - stepper.set_target:
+                id: nema
+                target: !lambda |-
+                  return id(steps_full)*-1 + id(steps_open_latch);
+            - wait_until:
+                lambda: return id(nema).current_position == id(steps_full)*-1 + id(steps_open_latch);
+            - delay: 2s
+            - stepper.set_target:
+                id: nema
+                target: -3200
+            - wait_until:
+                lambda: return id(nema).current_position == -3200;
+          else:          
+            - stepper.set_target:
+                id: nema
+                target: -1288
+            - wait_until:
+                lambda: return id(nema).current_position == -1288;
+            - delay: 2s
+            - stepper.set_target:
+                id: nema
+                target: -100
+            - wait_until:
+                lambda: return id(nema).current_position == -200; 
+      - output.turn_off: stepper_en
+      - switch.turn_off: open_home_door
+  - platform: template
+    name: "Close home door"
+    id: close_home_door
+    turn_on_action:
+      - if:
+          condition:
+            binary_sensor.is_off: door_state
+          then:         
+            - script.execute: close_door
+
+output:
+  - platform: esp8266_pwm
+    pin: D0
+    frequency: 1000 Hz
+    id: buzzer
+  - platform: gpio
+    pin: D4
+    inverted: True
+    id: stepper_en
+
+rtttl:
+  output: buzzer
+
+stepper:
+  - platform: a4988
+    id: nema
+    step_pin: D3
+    dir_pin: D2
+    max_speed: 3000 steps/s
+    acceleration: 5000
+    deceleration: 5000
+
+sensor:
+  - platform: fingerprint_grow
+    fingerprint_count:
+      name: "Fingerprint Count"
+    status:
+      name: "Fingerprint Status"
+    capacity:
+      name: "Fingerprint Capacity"
+    security_level:
+      name: "Fingerprint Security Level"
+    last_finger_id:
+      name: "Fingerprint Last Finger ID"
+    last_confidence:
+      name: "Fingerprint Last Confidence"
+      
+binary_sensor:
+  - platform: fingerprint_grow
+    name: "Fingerprint Enrolling"
+  - platform: gpio
+    pin: D1
+    name: "Door Button"
+    on_click:
+      min_length: 100ms
+      then:
+        - rtttl.play: "one short:d=4,o=5,b=100:16e6"
+        - delay: 5s
+        - script.execute: close_door
+        - wait_until:
+            not:
+              script.is_running: close_door
+        - rtttl.play: "two short:d=4,o=5,b=100:16e6,16e6"
+
+  - platform: gpio
+    pin: D8
+    name: "Door State ON is closed"
+    device_class: door
+    id: door_state
+
+script:
+  - id: close_door
+    then: 
+      - stepper.report_position:
+          id: nema
+          position: 0
+      - output.turn_on: stepper_en
+      - stepper.set_target:
+          id: nema
+          target: 3200
+      - wait_until:
+          lambda: return id(nema).current_position == 3200;
+      - output.turn_off: stepper_en
+
+api:
+  services:
+    - service: fingerprint_grow_enroll
+      variables:
+        finger_id: int
+        num_scans: int
+      then:
+        - fingerprint_grow.enroll:
+            finger_id: !lambda 'return finger_id;'
+            num_scans: !lambda 'return num_scans;'
+    - service: fingerprint_grow_cancel_enroll
+      then:
+        - fingerprint_grow.cancel_enroll:
+    - service: fingerprint_grow_delete
+      variables:
+        finger_id: int
+      then:
+        - fingerprint_grow.delete:
+            finger_id: !lambda 'return finger_id;'
+    - service: fingerprint_grow_delete_all
+      then:
+        - fingerprint_grow.delete_all:

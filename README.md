@@ -7,7 +7,7 @@ Starter project to build a smart lock device using ESPhome https://esphome.io/, 
 ## Disclaimer
 This is an ad-hoc project which worked for my door but may not for yours, still it may be a starting point for your project, feel free to join and feed back.
 
-Components used:
+## Components used:
 - NodeMCU v2 (esp8266) https://aliexpress.ru/item/32665100123.html
 - NEMA17 (dual shaft is a plus if you want to unlock yourself when the power is off) https://www.aliexpress.com/item/32906078178.html
 - stepper driver a4988 https://www.aliexpress.com/item/1005001374747956.html
@@ -26,3 +26,18 @@ To store fingerprints and do something with it add https://github.com/simonemari
 ## How to connect
 
 ![how to connect](https://github.com/simonemarin/esphome_smartlock/blob/main/ESPhome_smartlock.png?raw=true)
+
+## so what can it do for me?
+- big surprise! If the power line is not down it will open or close the door for you
+- there are 3 main actions: open the latch (same as opening with the handle), full open (unlocks and opens the latch), close the door (same as closing with keys)
+- these 3 main actions can be triggered by either of the following inputs: you press the button on the lock itself, you swipe your finger on the sensor, you press a button on Home Assistant, you log in ESPhome web interface and press a button
+
+## reliability
+- the software reliability is excellent, also thanks to ESPhome scripting you are not bound to have Home Assistant up and running
+- the direct drive system also is very reliable but, being mine and old door with old mecanics, from time to time the stepper seems not to be able to unlock the latch, normally it works at the second try. The plan is to use a TMC 2130 driver with StallGuard so we can force the motor to run until the latch is open, then back it down to home position
+- and yes I am using it daily, I am also using ESPhome for the street door so basically I am not using keys anymore
+
+## future plans
+- as mentioned upgrading to TCM2130 drivers
+- not directly related but a morse code reader for the street door bell so I can open it if I forget the phone or have no battery
+- a better case design, something not so boxy

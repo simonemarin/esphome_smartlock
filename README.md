@@ -1,4 +1,7 @@
 # esphome_smartlock
+
+![3D preview](https://github.com/simonemarin/esphome_smartlock/blob/main/3d_preview.png?raw=true)
+
 Starter project to build a smart lock device using ESPhome https://esphome.io/, a NEMA17, a stepper driver, a figerprint sensor (optional), a couple of switches, a passive buzzer and some 3d printed parts.
 
 ## Disclaimer
@@ -19,3 +22,7 @@ Components used:
 To add fingerprint functionality you have to pull a specific branch of ESPhome, thay may change soon, please follow up here https://github.com/esphome/esphome/pull/1356
 
 To store fingerprints and do something with it add https://github.com/simonemarin/esphome_smartlock/blob/main/ha_fingerprint_package.yaml to Home Assistant 
+
+## How to connect
+
+![how to connect](https://github.com/simonemarin/esphome_smartlock/blob/main/ESPhome_smartlock.png?raw=true)

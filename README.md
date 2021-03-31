@@ -14,4 +14,4 @@ Components used:
 - a switch for the frontend (also optional)
 - access to a 3D printer (I add the blender project you will have to adapt it to your door)
 
-
+To add fingerprint functionality you have to pull a specific branch of ESPhome, thay may change soon, please follow up here https://github.com/esphome/esphome/pull/1356

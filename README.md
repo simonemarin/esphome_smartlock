@@ -17,3 +17,5 @@ Components used:
 - access to a 3D printer (I am including the blender project, you will have to adapt it to your door)
 
 To add fingerprint functionality you have to pull a specific branch of ESPhome, thay may change soon, please follow up here https://github.com/esphome/esphome/pull/1356
+
+To store fingerprints and do something with it add https://github.com/simonemarin/esphome_smartlock/blob/main/ha_fingerprint_package.yaml to Home Assistant 

@@ -1,0 +1,68 @@
+input_number:
+  finger_id:
+    name: Numeric Input Box
+    initial: 0
+    min: 0
+    max: 50
+    step: 1
+    mode: box
+
+input_boolean:
+  fingerprint_enroll:
+    name: Toggle enrollment
+    icon: mdi:car
+  delete_all:
+    name: Delete all fingerprints
+  figerprint_matched:
+    name: recognized finger
+    icon: mdi:fingerprint
+    
+automation:
+  - id: enroll
+    alias: 'Enroll finger'
+    trigger:
+      platform: state
+      entity_id: input_boolean.fingerprint_enroll
+    action:
+    - service: esphome.finger_fingerprint_grow_enroll
+      data_template:
+        finger_id: "{{ states('input_number.box1') | int }}" 
+        num_scans: 2
+    - delay: 2
+    - service: input_boolean.turn_off
+      data:
+        entity_id: input_boolean.fingerprint_enroll
+  - id: delete_fingers
+    alias: 'Delete all fingers'
+    trigger:
+      platform: state
+      entity_id: input_boolean.delete_all
+    action:
+    - service: esphome.finger_fingerprint_grow_delete_all
+    - delay: 2
+    - service: input_boolean.turn_off
+      data:
+        entity_id: input_boolean.delete_all
+  - id: fingerprint_matched
+    alias: 'Fingerprint Matched'
+    trigger:
+    - platform: event
+      event_type: "esphome.test_fingerprint_grow_finger_scan_matched"
+    action:
+    - service: input_boolean.turn_on
+      data:
+        entity_id: input_boolean.fingerprint_matched
+    - delay: 2
+    - service: input_boolean.turn_off
+      data:
+        entity_id: input_boolean.fingerprint_matched
+
+script:
+  enroll_finger:
+    alias: 'Enroll finger'
+    sequence:
+    - service: esphome.home_door_fingerprint_grow_enroll
+      data_template:
+        finger_id: "{{ states('input_number.finger_id') | int }}" 
+        num_scans: 2
+  

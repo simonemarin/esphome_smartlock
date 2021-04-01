@@ -41,3 +41,5 @@ To store fingerprints and do something with it add https://github.com/simonemari
 - as mentioned upgrading to TCM2130 drivers
 - not directly related but a morse code reader for the street door bell so I can open it if I forget the phone or have no battery
 - a better case design, something not so boxy
+
+![3preview](https://github.com/simonemarin/esphome_smartlock/blob/main/sl.jpg?raw=true)
